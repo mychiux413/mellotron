@@ -45,7 +45,7 @@ def cumulativeMeanNormalizedDifferenceFunction(df, N):
     return np.insert(cmndf, 0, 1)
 
 
-def getPitch(cmdf, tau_min, tau_max, harmo_th=0.1):
+def getPitch(cmdf, tau_min, tau_max, harmo_th):
     """
     Return fundamental period of a frame based on CMND function.
 
@@ -67,8 +67,8 @@ def getPitch(cmdf, tau_min, tau_max, harmo_th=0.1):
     return 0    # if unvoiced
 
 
-def compute_yin(sig, sr, w_len=512, w_step=256, f0_min=100, f0_max=500,
-                harmo_thresh=0.1):
+def compute_yin(sig, sr, w_len, w_step, f0_min, f0_max,
+                harmo_thresh):
     """
 
     Compute the Yin Algorithm. Return fundamental frequency and harmonic rate.
