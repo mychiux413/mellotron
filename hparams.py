@@ -2,7 +2,7 @@ import tensorflow as tf
 from text.symbols import symbols
 
 
-def create_hparams(hparams_string=None, verbose=False):
+def create_hparams(hparams_string=None, verbose=False, config_path=None):
     """Create model hyperparameters. Parse nondefault from given string."""
 
     hparams = tf.contrib.training.HParams(
@@ -114,6 +114,17 @@ def create_hparams(hparams_string=None, verbose=False):
         mask_padding=True,  # set model's padded outputs to padded values
 
     )
+
+    if config_path is not None:
+        assert os.path.exists(config_path)
+        config = {}
+        if config_path.endswith('.json'):
+            config = json.load(open(config_path))
+        if config_path.endswith('.yaml'):
+            config = yaml.load(open(config_path), yaml.FullLoader)
+
+        for key, value in config.items():
+            setattr(hparams, key, value)
 
     if hparams_string:
         tf.compat.v1.logging.info('Parsing command line hparams: %s', hparams_string)
