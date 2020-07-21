@@ -4,6 +4,7 @@ import music21 as m21
 import torch
 import torch.nn.functional as F
 from text import text_to_sequence, get_arpabet, cmudict
+from hparams import create_hparams
 
 
 CMUDICT_PATH = "data/cmu_dictionary"
@@ -228,7 +229,7 @@ def adjust_consonants(events, phoneme_durations):
     return events
 
 
-def adjust_event(event, hop_length=256, sampling_rate=22050):
+def adjust_event(event):
     tokens, freq, start_time, end_time = event
 
     if tokens == ' ':
@@ -237,7 +238,7 @@ def adjust_event(event, hop_length=256, sampling_rate=22050):
     return [[token, freq, start_time, end_time] for token in tokens]
 
 
-def musicxml2score(filepath, bpm=60):
+def musicxml2score(filepath, bpm):
     track = {}
     beat_length_seconds = 60/bpm
     data = m21.converter.parse(filepath)
@@ -379,7 +380,7 @@ def events2eventsarpabet(event):
     return new_events
 
 
-def event2alignment(events, hop_length=256, sampling_rate=22050):
+def event2alignment(events, hop_length, sampling_rate):
     frame_length = float(hop_length) / float(sampling_rate)
 
     n_frames = int(events[-1][-1][-1] / frame_length)
@@ -397,7 +398,7 @@ def event2alignment(events, hop_length=256, sampling_rate=22050):
     return alignment[:cur_event+1]
 
 
-def event2f0(events, hop_length=256, sampling_rate=22050):
+def event2f0(events, hop_length, sampling_rate):
     frame_length = float(hop_length) / float(sampling_rate)
     n_frames = int(events[-1][-1][-1] / frame_length)
     f0s = np.zeros((1, n_frames))
@@ -441,7 +442,7 @@ def remove_excess_frames(alignment, f0s):
     return alignment, f0s
 
 
-def get_data_from_musicxml(filepath, bpm, phoneme_durations=None,
+def get_data_from_musicxml(hparams, filepath, bpm, phoneme_durations=None,
                            convert_stress=False):
     if phoneme_durations is None:
         phoneme_durations = PHONEMEDURATION
@@ -464,8 +465,12 @@ def get_data_from_musicxml(filepath, bpm, phoneme_durations=None,
         events_arpabet = add_space_between_events(events_arpabet)
 
         # convert data to alignment, f0 and text encoded
-        alignment = event2alignment(events_arpabet)
-        f0s = event2f0(events_arpabet)
+        alignment = event2alignment(events_arpabet,
+                                    hop_length=hparams.hop_length,
+                                    sampling_rate=hparams.sampling_rate)
+        f0s = event2f0(events_arpabet,
+                       hop_length=hparams.hop_length,
+                       sampling_rate=hparams.sampling_rate)
         alignment, f0s = remove_excess_frames(alignment, f0s)
         text_encoded, text_clean = event2text(events_arpabet, convert_stress)
 
@@ -485,5 +490,11 @@ if __name__ == "__main__":
     # Get defaults so it can work with no Sacred
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', "--filepath", required=True)
+    parser.add_argument('--config', type=str,
+                        required=True,
+                        help='json or yaml config file to overwrite hparams, '
+                        'you must specify the alphabets file to init symbols')
     args = parser.parse_args()
-    get_data_from_musicxml(args.filepath, 60)
+
+    hparams = create_hparams(config_path=args.config)
+    get_data_from_musicxml(hparams, args.filepath, 60)

@@ -51,8 +51,8 @@ class TextMelLoader(torch.utils.data.Dataset):
         d = {int(speaker_ids[i]): i for i in range(len(speaker_ids))}
         return d
 
-    def get_f0(self, audio, sampling_rate=22050, frame_length=1024,
-               hop_length=256, f0_min=100, f0_max=300, harm_thresh=0.1):
+    def get_f0(self, audio, sampling_rate, frame_length,
+               hop_length, f0_min, f0_max, harm_thresh):
         f0, harmonic_rates, argmins, times = compute_yin(
             audio, sampling_rate, frame_length, hop_length, f0_min, f0_max,
             harm_thresh)
